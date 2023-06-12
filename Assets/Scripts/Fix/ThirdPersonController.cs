@@ -10,6 +10,7 @@ public class ThirdPersonController : MonoBehaviour
     [Header("Movement Parameters")]
     public float speed;
     [SerializeField] public float jumpPower;
+    public float sprintSpeed;
 
     [Header("Rotation Parameters")]
     public float turnSmoothTime = 0.1f;
@@ -26,36 +27,63 @@ public class ThirdPersonController : MonoBehaviour
     void Update()
     {
 
-        //Input
+        // Input Movement
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
 
-        //Detection if player is moving
+        // Detection if player is Moving
         if (direction.magnitude >= 0.1f)
         {
+            // Rotation Player
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
             float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
 
-            controller.Move(direction * speed * Time.deltaTime);
+            // Detection if player is Sprinting
+            if (Input.GetKey(KeyCode.LeftShift))
+            {
+                controller.Move(direction * sprintSpeed * Time.deltaTime);
+
+                animator.SetBool("isSprinting", true);
+                animator.SetBool("isWalking", false);
+            }
+            else
+            {
+                controller.Move(direction * speed * Time.deltaTime);
+
+                animator.SetBool("isSprinting", false);
+                animator.SetBool("isWalking", true);
+            }           
+
+        }
+        if(direction.magnitude < 0.1f)
+        {
+            animator.SetBool("isWalking", false);
         }
 
         // Apply gravity
         if (!controller.isGrounded)
         {
             velocity += gravity * gravityMultiplier * Time.deltaTime;
-            //controller.Move(new Vector3(0f, velocity, 0f) * Time.deltaTime);
         }
         else
         {
             velocity = 0f;
         }
 
-        //Input Movement 
+        // Input Movement 
         if (Input.GetKey(KeyCode.Space))
         {
-            Jump();
+            if(IsGrounded())
+            {
+                Jump();
+                animator.SetBool("isJumping", true);
+            }
+            else
+            {
+                animator.SetBool("isJumping", false);
+            }
         }
 
         controller.Move(new Vector3(0f, velocity, 0f) * Time.deltaTime);
@@ -64,10 +92,8 @@ public class ThirdPersonController : MonoBehaviour
 
     public void Jump()
     {
-        if(IsGrounded())
-        {
-            velocity = jumpPower;
-        }
+        velocity = jumpPower;
+
     }
 
     private bool IsGrounded() => controller.isGrounded;
