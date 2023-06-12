@@ -25,23 +25,11 @@ public class ThirdPersonController : MonoBehaviour
 
     void Update()
     {
+
         //Input
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
-
-
-        //Gravity
-        if (controller.isGrounded && velocity < 0f)
-        {
-            velocity = -1.0f;
-        }
-        else
-        {
-            velocity += gravity * gravityMultiplier * Time.deltaTime;
-        }
-        direction.y = velocity;
-
 
         //Detection if player is moving
         if (direction.magnitude >= 0.1f)
@@ -53,6 +41,16 @@ public class ThirdPersonController : MonoBehaviour
             controller.Move(direction * speed * Time.deltaTime);
         }
 
+        // Apply gravity
+        if (!controller.isGrounded)
+        {
+            velocity += gravity * gravityMultiplier * Time.deltaTime;
+            //controller.Move(new Vector3(0f, velocity, 0f) * Time.deltaTime);
+        }
+        else
+        {
+            velocity = 0f;
+        }
 
         //Input Movement 
         if (Input.GetKey(KeyCode.Space))
@@ -60,13 +58,16 @@ public class ThirdPersonController : MonoBehaviour
             Jump();
         }
 
+        controller.Move(new Vector3(0f, velocity, 0f) * Time.deltaTime);
+
     }
 
     public void Jump()
     {
-        if (!IsGrounded()) return;
-
-        velocity += jumpPower;
+        if(IsGrounded())
+        {
+            velocity = jumpPower;
+        }
     }
 
     private bool IsGrounded() => controller.isGrounded;
